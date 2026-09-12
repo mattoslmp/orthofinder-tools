@@ -2,27 +2,24 @@
 # How to upload:
 #  - change package version in `setup.py` and `__init__.py`
 #  - `python setup.py sdist`
-#  - `twine upload dist/opengenomebrowser-tools-?.tar.gz`
+#  - `twine upload dist/orthofinder-tools-?.tar.gz`
 import pathlib
 from setuptools import setup
 
-# The directory containing this file
 HERE = pathlib.Path(__file__).parent
-
-# The text of the README file
-README = (HERE / 'README.md').read_text()
+README = (HERE / 'README.md').read_text(encoding='utf-8')
 
 setup(
     name='orthofinder-tools',
-    version='0.0.2',
-    description='Annotate orthogenes and create Roary-like plots',
+    version='0.1.0',
+    description='Annotate OrthoFinder orthogroups and create publication-ready comparative-genomics figures',
     long_description=README,
     long_description_content_type='text/markdown',
-    url='https://github.com/MrTomRod/orthofinder-tools/',
-    author='Thomas Roder',
-    author_email='roder.thomas@gmail.com',
+    url='https://github.com/mattoslmp/orthofinder-tools/',
+    author='Thomas Roder; Databiomics extensions',
     license='MIT',
     packages=['orthofinder_tools'],
+    python_requires='>=3.9',
     install_requires=[
         'numpy',
         'pandas',
@@ -36,10 +33,10 @@ setup(
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
         'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
     ],
     entry_points={
         'console_scripts': [
