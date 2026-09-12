@@ -7,7 +7,7 @@
 # adding multi-format export and additional comparative-genomics visualisations.
 
 __author__ = "Thomas Roder; Databiomics extensions"
-__version__ = "0.3.0"
+__version__ = "0.1.0"
 
 import json
 import math
@@ -74,7 +74,6 @@ def _parse_formats(format="svg", formats=None):
     if invalid:
         raise ValueError(f"Unsupported figure format(s): {', '.join(invalid)}. Allowed: {', '.join(ALLOWED_FORMATS)}")
 
-    # Preserve caller order while removing duplicates.
     return list(dict.fromkeys(values))
 
 
@@ -174,7 +173,6 @@ def _plot_matrix(tree, matrix, no_labels=False):
     tips = _tree_order(tree, matrix.columns)
     ordered = matrix.loc[:, tips]
 
-    # Width increases mildly for large datasets while keeping manuscript-friendly proportions.
     matrix_width = min(14.0, max(7.0, 5.0 + n_orthogroups / 800.0))
     tree_width = min(6.5, max(3.5, 3.8 + n_genomes / 80.0))
     fig_height = min(18.0, max(6.0, 3.5 + n_genomes * 0.22))
@@ -242,7 +240,7 @@ def _plot_composition(categories, n_orthogroups):
 
 def _accumulation_statistics(matrix, permutations=100, seed=42):
     arr = matrix.to_numpy(dtype=np.uint8)
-    n_orthogroups, n_genomes = arr.shape
+    _, n_genomes = arr.shape
     if n_genomes == 0:
         raise ValueError("No genomes were found in the orthogroup table.")
 
@@ -348,37 +346,7 @@ def create_plots(
     permutations=100,
     max_patterns=20,
 ):
-    """
-    Create publication-ready comparative-genomics figures from OrthoFinder OG/HOG outputs.
-
-    Backwards compatibility:
-      * ``format='svg'`` still works exactly as the legacy CLI expects.
-      * Set ``formats='svg,pdf,png'`` to export multiple formats in one run.
-
-    Parameters
-    ----------
-    tree
-        Newick tree object or path to a Newick species tree.
-    orthogroups_tsv
-        Path to Orthogroups.tsv/N0.tsv or a boolean DataFrame
-        (rows=orthogroups, columns=genomes).
-    out
-        Output directory.
-    format
-        Legacy single output format.
-    no_labels
-        Hide species labels on the phylogenetic tree.
-    hog
-        If True, read a hierarchical orthogroup N0.tsv file.
-    formats
-        Optional comma-separated or iterable list of png,tiff,pdf,svg.
-    dpi
-        Raster export resolution. Defaults to 600 dpi.
-    permutations
-        Random genome orders used for pan/core accumulation confidence bands.
-    max_patterns
-        Maximum exact presence/absence patterns shown in the pattern panel.
-    """
+    """Create publication-ready comparative-genomics figures from OrthoFinder OG/HOG outputs."""
     out = os.path.abspath(os.path.expanduser(str(out)))
     os.makedirs(out, exist_ok=True)
     export_formats = _parse_formats(format=format, formats=formats)
@@ -411,7 +379,6 @@ def create_plots(
     outputs = []
     outputs.extend(_save_figure(_plot_frequency(og_count, n_genomes), out, "pangenome_frequency", export_formats, dpi))
     outputs.extend(_save_figure(_plot_matrix(tree, matrix_sorted, no_labels=no_labels), out, "pangenome_matrix", export_formats, dpi))
-    # Keep the historic filename while upgrading the visual to a publication-ready donut.
     outputs.extend(_save_figure(_plot_composition(categories, n_orthogroups), out, "pangenome_pie", export_formats, dpi))
     outputs.extend(_save_figure(_plot_accumulation(matrix, permutations=permutations), out, "pangenome_accumulation", export_formats, dpi))
     outputs.extend(_save_figure(_plot_patterns(matrix, max_patterns=max_patterns), out, "orthogroup_patterns", export_formats, dpi))
