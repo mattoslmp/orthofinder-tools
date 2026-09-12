@@ -3,12 +3,18 @@
 ## Idea
 
 * Calculate the most common gene name of each orthogroup by majority vote: `annotate_orthogroups`
-* Create plots analogous to roary_plots: `orthofinder_plots`
+* Create publication-ready comparative-genomics plots from OrthoFinder results: `orthofinder_plots`
 
 ## Setup
 
 ```shell
 pip install orthofinder-tools
+```
+
+For the Databiomics fork directly from GitHub:
+
+```shell
+pip install "git+https://github.com/mattoslmp/orthofinder-tools.git@master"
 ```
 
 ## Usage
@@ -29,7 +35,7 @@ From this protein, `DNA-directed RNA polymerase subunit beta'` will be extracted
 
 #### Command line usage
 
-```
+```shell
 annotate_orthogroups --help
 
 annotate_orthogroups \
@@ -43,11 +49,11 @@ annotate_orthogroups \
 
 If `--simple=False` resulting tsv looks like this:
 
-|   HOG         |         Best Gene Name        | Gene Name Occurrences |
-| ------------- | ----------------------------- | --------------------- |
-| N0.HOG0000000 | amino acid ABC transporter    | {JSON}                |
-| N0.HOG0000001 | IS30 family transposase       | {JSON}                |
-| N0.HOG0000002 | IS5/IS1182 family transposase | {JSON}                |
+| HOG | Best Gene Name | Gene Name Occurrences |
+| --- | --- | --- |
+| N0.HOG0000000 | amino acid ABC transporter | `{JSON}` |
+| N0.HOG0000001 | IS30 family transposase | `{JSON}` |
+| N0.HOG0000002 | IS5/IS1182 family transposase | `{JSON}` |
 
 The JSON is a dictionary with key='gene name' -> value=occurrence, for example:
 
@@ -59,19 +65,11 @@ The JSON is a dictionary with key='gene name' -> value=occurrence, for example:
 }
 ```
 
-If `--simple=True` resulting tsv looks like this (no header):
+If `--simple=True` the resulting TSV contains the orthogroup and its majority-vote gene name.
 
-|               |                               |
-|---------------|-------------------------------|
-| N0.HOG0000000 | amino acid ABC transporter    |
-| N0.HOG0000001 | IS30 family transposase       |
-| N0.HOG0000002 | IS5/IS1182 family transposase |
-
-
-#### Usage as python class
+#### Usage as Python class
 
 ```python
-# load class
 from orthofinder_tools import OrthogroupToGeneName
 
 PATH_TO_ORTHOFINDER_FASTAS = '/path/to/OrthoFinder/fastas'
@@ -82,73 +80,76 @@ otg = OrthogroupToGeneName(
     file_endings='faa',
 )
 otg.load_hog(
-    hog_tsv=F'{PATH_TO_ORTHOFINDER_FASTAS}/OrthoFinder/{CURRENT_FOLDER}/Phylogenetic_Hierarchical_Orthogroups/N0.tsv'
+    hog_tsv=f'{PATH_TO_ORTHOFINDER_FASTAS}/OrthoFinder/{CURRENT_FOLDER}/Phylogenetic_Hierarchical_Orthogroups/N0.tsv'
 )
 ```
 
-`otg.majority_dict` will be a python dict with key='orthogroup' -> value='best name', for example:
-
-```json5
-{
-  'N0.HOG0000000': 'amino acid ABC transporter',
-  'N0.HOG0000001': 'IS30 family transposase',
-  'N0.HOG0000002': 'IS5/IS1182 family transposase',
-}
-```
-
-`otg.save_majority_df(outfile='path/to/outfile.tsv)` writes the following file:
-
-```text
-HOG Best Gene Name  Gene Name Occurrences
-N0.HOG0000000   amino acid ABC transporter Counter({'amino acid ABC transporter': 43})
-...
-```
-
-`otg.save_orthogroup_to_gene_ids(outfile='path/to/outfile.tsv)` writes the following file (no header):
-
-```text
-N0.HOG0000000   gene_1  gene_2
-N0.HOG0000001   gene_3  gene_4  gene_5
-...
-```
-
-`otg.save_orthogroup_to_gene_ids(outfile='path/to/outfile.tsv)` writes the following file (no header):
-
-```text
-N0.HOG0000000	amino acid ABC transporter ATP-binding protein
-N0.HOG0000001	ATP-binding cassette domain-containing protein
-...
-```
+`otg.majority_dict` is a Python dictionary with orthogroup IDs as keys and majority-vote gene names as values.
 
 ### orthofinder_plots
 
-**Disclaimer:**
-This script is a port of [roary_plots](https://github.com/sanger-pathogens/Roary/tree/master/contrib/roary_plots) by
-Marco Galardini (marco@ebi.ac.uk).
+This script started as a port of [roary_plots](https://github.com/sanger-pathogens/Roary/tree/master/contrib/roary_plots) by Marco Galardini and now includes publication-ready Databiomics extensions.
 
+The legacy command remains valid:
+
+```shell
+orthofinder_plots \
+  --tree data/SpeciesTree_rooted.txt \
+  --orthogroups_tsv data/Orthogroups.tsv \
+  --out output
 ```
-# Command line usage:
-orthofinder_plots --help
-orthofinder_plots --tree data/SpeciesTree_rooted.txt --orthogroups_tsv data/Orthogroups.tsv --out output
+
+For manuscript-ready exports, generate vector and high-resolution raster files together:
+
+```shell
+orthofinder_plots \
+  --tree data/SpeciesTree_rooted.txt \
+  --orthogroups_tsv data/Orthogroups.tsv \
+  --out output \
+  --formats svg,pdf,png \
+  --dpi 600 \
+  --permutations 100 \
+  --max_patterns 20
 ```
 
-Three files will be created:
+For hierarchical orthogroups (`N0.tsv`), add `--hog True`.
 
-<img src="output/pangenome_frequency.svg"  width="80%"><br>
-<img src="output/pangenome_matrix.svg"  width="80%"><br>
-<img src="output/pangenome_pie.svg"  width="80%"><br>
+#### Generated figures
 
-#### Usage as python class
+The plotting workflow now produces:
+
+* `pangenome_frequency` — orthogroup frequency across genomes.
+* `pangenome_matrix` — species tree aligned to the orthogroup presence/absence matrix.
+* `pangenome_pie` — publication-ready donut summarising core, soft-core, shell and cloud orthogroups. The historic filename is retained for compatibility.
+* `pangenome_accumulation` — pan-genome and core-genome accumulation curves across random genome orders, with 95% empirical intervals.
+* `orthogroup_patterns` — the most frequent exact presence/absence patterns across genomes.
+* `orthofinder_plot_summary.json` — machine-readable counts, thresholds, output formats and figure manifest.
+
+Supported figure formats are `svg`, `pdf`, `png` and `tiff`. SVG/PDF are recommended for vector artwork; PNG/TIFF default to 600 dpi for publication-quality raster output.
+
+The pangenome categories follow the existing package convention: core >=99% of genomes, soft-core >=95% and <99%, shell >=15% and <95%, and cloud <15%. Integer thresholds are calculated with `ceil`, and the exact values used are recorded in the JSON summary.
+
+#### Usage as Python class
 
 ```python
-# load class
 from orthofinder_tools import create_plots
 
-create_plots(
+summary = create_plots(
     tree='/path/to/SpeciesTree_rooted.txt',
     orthogroups_tsv='/path/to/Orthogroups.tsv',
-    format='svg',
+    out='/path/to/output/folder',
+    formats='svg,pdf,png',
+    dpi=600,
+    permutations=100,
+    max_patterns=20,
     no_labels=False,
-    out='/path/to/output/folder'
 )
+
+print(summary)
 ```
+
+### Notes for reproducible figures
+
+* Species names in `SpeciesTree_rooted.txt` must match the columns in `Orthogroups.tsv`.
+* The accumulation plot uses a deterministic random seed internally, so the same input and parameters reproduce the same curves.
+* The plotting layer does not modify OrthoFinder results; it only reads the tree and orthogroup tables and writes derived figures/summary files.
